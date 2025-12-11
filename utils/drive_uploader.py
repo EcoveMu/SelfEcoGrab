@@ -15,7 +15,7 @@ from googleapiclient.http import MediaFileUpload
 class DriveUploader:
     """Handles file uploads to Google Drive using Service Account."""
     
-    SCOPES = ['https://www.googleapis.com/auth/drive.file']
+    SCOPES = ['https://www.googleapis.com/auth/drive']
     
     def __init__(self, service_account_file: str, folder_id: str):
         """
