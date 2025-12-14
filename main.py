@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from scrapers import run_procurement_scraper, run_tender_scraper, run_public_read_scraper
-from utils import Config, DriveUploader
+from utils import Config, DriveUploader, run_data_cleaner
 
 
 def save_result(result: dict, prefix: str) -> str:
@@ -107,16 +107,33 @@ def main():
     # Run all scrapers
     output_files = run_all_scrapers()
     
-    # Upload to Google Drive
-    upload_to_drive(output_files)
+    # Run data cleaner to merge and deduplicate
+    print("\n" + "=" * 60)
+    print("🧹 Running Data Cleaner")
+    print("=" * 60)
+    
+    try:
+        cleaner_result = run_data_cleaner(Config.OUTPUT_DIR)
+        merged_files = cleaner_result.get("merged_files", [])
+        print(f"  ✓ Generated {len(merged_files)} merged files")
+    except Exception as e:
+        print(f"  ✗ Data cleaner error: {e}")
+        traceback.print_exc()
+        merged_files = []
+    
+    # Upload merged files to Google Drive (instead of raw scraper output)
+    files_to_upload = merged_files if merged_files else output_files
+    upload_to_drive(files_to_upload)
     
     # Summary
     print("\n" + "=" * 60)
     print("📊 Summary")
     print("=" * 60)
-    print(f"  Files created: {len(output_files)}")
-    for f in output_files:
-        print(f"    - {f}")
+    print(f"  Raw scraper files: {len(output_files)}")
+    print(f"  Merged files: {len(merged_files)}")
+    print(f"  Files uploaded: {len(files_to_upload)}")
+    for f in files_to_upload:
+        print(f"    - {os.path.basename(f)}")
     print(f"  Finished at: {datetime.now().isoformat()}")
     print("=" * 60 + "\n")
 

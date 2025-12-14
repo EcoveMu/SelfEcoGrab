@@ -7,12 +7,18 @@ on:
     # 16:45 Taiwan = 08:45 UTC
     - cron: '45 0 * * 1,3,5'
     - cron: '45 8 * * 1,3,5'
+    # 週日清理排程: 00:00 台北 = 16:00 UTC (前一天週六)
+    - cron: '0 16 * * 6'
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
   collect:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+
+    env:
+      GOOGLE_DRIVE_FOLDER_ID: '1HenAIy7mPsfaVMHGd2sLu1fygfSpeFad'
+      GOOGLE_DRIVE_ARCHIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_ARCHIVE_FOLDER_ID }}
 
     steps:
       - name: Checkout repository
@@ -41,8 +47,6 @@ jobs:
           echo "$GOOGLE_SERVICE_ACCOUNT_KEY" > service_account.json
 
       - name: Run scrapers
-        env:
-          GOOGLE_DRIVE_FOLDER_ID: '1HenAIy7mPsfaVMHGd2sLu1fygfSpeFad'
         run: |
           python main.py
 
