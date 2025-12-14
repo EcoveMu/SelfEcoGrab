@@ -113,7 +113,11 @@ class TenderScraper:
         """Navigate to search results page."""
         print("  → Executing search")
 
+        # 重要調整：
+        # 1. dateType=isSpdt（等標期內）- 抓取所有招標中的案件，而非只有當日
+        # 2. pageSize=100 - 每頁顯示 100 筆，減少翻頁次數
         params = [
+            "pageSize=100",
             "firstSearch=true",
             "searchType=basic",
             "isBinding=N",
@@ -125,7 +129,7 @@ class TenderScraper:
             "tenderId=",
             "tenderType=TENDER_DECLARATION",
             "tenderWay=TENDER_WAY_ALL_DECLARATION",
-            "dateType=isNow",
+            "dateType=isSpdt",
             "tenderStartDate=",
             "tenderEndDate=",
             "radProctrgCate=",

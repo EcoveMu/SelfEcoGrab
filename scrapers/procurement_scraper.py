@@ -26,9 +26,10 @@ class ProcurementScraper:
     ANNOUNCE_URL = f"{BASE_URL}ann_search4.aspx"
     REGISTERED_URL = f"{BASE_URL}case_search4.aspx"
     
-    def __init__(self, headless: bool = True, wait_seconds: int = 15):
+    def __init__(self, headless: bool = True, wait_seconds: int = 30, max_retries: int = 3):
         self.headless = headless
         self.wait_seconds = wait_seconds
+        self.max_retries = max_retries
         self.driver = None
         self.wait = None
         self.current_list_url = None
@@ -47,9 +48,14 @@ class ProcurementScraper:
         chrome_options.add_argument('--disable-extensions')
         chrome_options.add_argument('--disable-infobars')
         chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+        # 增加頁面載入超時設定
+        chrome_options.page_load_strategy = 'normal'
         
         service = Service(ChromeDriverManager().install())
         self.driver = webdriver.Chrome(service=service, options=chrome_options)
+        # 設定頁面載入超時時間
+        self.driver.set_page_load_timeout(60)
+        self.driver.set_script_timeout(60)
         self.wait = WebDriverWait(self.driver, self.wait_seconds)
         
         print("✓ Chrome WebDriver initialized")
@@ -88,20 +94,39 @@ class ProcurementScraper:
             pass
         return None
 
+    def _load_page_with_retry(self, url: str, page_type: str) -> bool:
+        """Load a page with retry mechanism."""
+        for attempt in range(1, self.max_retries + 1):
+            try:
+                print(f"  → Loading {page_type} page (attempt {attempt}/{self.max_retries})...")
+                self.driver.get(url)
+                self.wait.until(EC.presence_of_element_located((By.TAG_NAME, "table")))
+                print(f"  ✓ Page loaded successfully")
+                return True
+            except TimeoutException:
+                print(f"  ⚠ Timeout on attempt {attempt}")
+                if attempt < self.max_retries:
+                    wait_time = 5 * attempt  # 指數退避: 5s, 10s, 15s
+                    print(f"  → Waiting {wait_time}s before retry...")
+                    time.sleep(wait_time)
+            except Exception as e:
+                print(f"  ⚠ Error on attempt {attempt}: {e}")
+                if attempt < self.max_retries:
+                    time.sleep(5)
+        return False
+
     def scrape_list_page(self, url: str, page_type: str, max_pages: int = 50) -> List[Dict]:
         """Scrape a list page (announce or registered)."""
         if not self.driver:
             raise RuntimeError("Driver not initialized")
             
         print(f"\nOpening {page_type} page: {url}")
-        self.driver.get(url)
-        self.current_list_url = url
         
-        try:
-            self.wait.until(EC.presence_of_element_located((By.TAG_NAME, "table")))
-        except TimeoutException:
-            print(f"  ⚠ Page load timeout for {page_type}")
+        if not self._load_page_with_retry(url, page_type):
+            print(f"  ✗ Failed to load {page_type} page after {self.max_retries} attempts")
             return []
+        
+        self.current_list_url = url
         
         all_items = []
         page_index = 1
