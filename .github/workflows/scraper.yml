@@ -1,15 +1,16 @@
 name: Data Collection
 
 on:
-  schedule:
-    # Run at 08:45 and 16:45 Taiwan time (UTC+8) on Mon, Wed, Fri
-    # 08:45 Taiwan = 00:45 UTC
-    # 16:45 Taiwan = 08:45 UTC
-    - cron: '45 0 * * 1,3,5'
-    - cron: '45 8 * * 1,3,5'
-    # 週日清理排程: 00:00 台北 = 16:00 UTC (前一天週六)
-    - cron: '0 16 * * 6'
-  workflow_dispatch:  # Allow manual trigger
+  # [DISABLED] Schedule triggers - 因經費問題暫停自動執行
+  # schedule:
+  #   # Run at 08:45 and 16:45 Taiwan time (UTC+8) on Mon, Wed, Fri
+  #   # 08:45 Taiwan = 00:45 UTC
+  #   # 16:45 Taiwan = 08:45 UTC
+  #   - cron: '45 0 * * 1,3,5'
+  #   - cron: '45 8 * * 1,3,5'
+  #   # 週日清理排程: 00:00 台北 = 16:00 UTC (前一天週六)
+  #   - cron: '0 16 * * 6'
+  workflow_dispatch:  # Allow manual trigger (仍可手動觸發)
 
 jobs:
   collect:
